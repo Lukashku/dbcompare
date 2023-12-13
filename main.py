@@ -4,6 +4,9 @@ from prettytable import PrettyTable
 from database_utils import DatabaseUtils
 from common_data_remover import CommonDataRemover
 
+global args
+args = None
+
 def list_databases(server, user, password, host, port):
     conn = mysql.connector.connect(
         host=host,
@@ -41,8 +44,8 @@ def compare_databases(cursor1, cursor2, args):
         )
 
     print("Comparison complete.")
-
 def main():
+    # Parse command-line arguments
     parser = argparse.ArgumentParser(description='Compare and remove common data between two MySQL databases.')
     parser.add_argument('--server1', required=True, help='Connection string for server1, e.g., user:password@host:port')
     parser.add_argument('--server2', required=True, help='Connection string for server2, e.g., user:password@host:port')
@@ -57,6 +60,7 @@ def main():
 
     args = parser.parse_args()
 
+    # Check for required argument and handle list functionality
     if args.list:
         user1, password1, host1, port1 = DatabaseUtils.parse_connection_string(args.server1)
         user2, password2, host2, port2 = DatabaseUtils.parse_connection_string(args.server2)
@@ -78,6 +82,7 @@ def main():
         parser.print_help()
         sys.exit(1)
 
+    # Connect to databases and create cursors
     user1, password1, host1, port1 = DatabaseUtils.parse_connection_string(args.server1)
     user2, password2, host2, port2 = DatabaseUtils.parse_connection_string(args.server2)
 
@@ -101,6 +106,7 @@ def main():
     cursor1 = conn1.cursor()
     cursor2 = conn2.cursor()
 
+    # Call compare_databases function with args
     compare_databases(cursor1, cursor2, args)
 
     conn1.commit()
