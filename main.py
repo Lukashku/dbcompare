@@ -4,6 +4,7 @@ from prettytable import PrettyTable
 from database_utils import DatabaseUtils
 from common_data_remover import CommonDataRemover
 import sys
+import keyboard
 
 def list_databases(server, user, password, host, port):
     conn = mysql.connector.connect(
@@ -51,6 +52,11 @@ def main():
     parser.add_argument('--log-file', help='Specify a log file path')
 
     args = vars(parser.parse_args())
+
+    # Register the status key
+    def print_status(e):
+        print(f"Total deleted lines: {CommonDataRemover.total_deleted_lines}")
+    keyboard.on_press_key(args['status_key'], print_status)
 
     if args['list']:
         user1, password1, host1, port1 = DatabaseUtils.parse_connection_string(args['server1'])
@@ -100,6 +106,7 @@ def main():
     conn1.commit()
     conn1.close()
     conn2.close()
-
+    # Unregister the status key at the end of your program
+    keyboard.unhook_all()
 if __name__ == "__main__":
     main()
