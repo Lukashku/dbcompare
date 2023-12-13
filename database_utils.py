@@ -22,22 +22,27 @@ class DatabaseUtils:
     @staticmethod
     def parse_connection_string(connection_string):
         """
-        Parses a connection string into individual components.
+        Parses a database connection string.
 
         Args:
-            connection_string: The database connection string.
+            connection_string: The connection string in the format `user:password@host:port`.
 
         Returns:
             A dictionary containing parsed connection parameters.
         """
 
-        parts = connection_string.split(":", 4)
+        pattern = r"([^:@]+)(?::([^@]+))?@([^:]+):(\d+)"
+        match = re.match(pattern, connection_string)
+
+        if not match:
+            raise ValueError(f"Invalid connection string format: {connection_string}")
+
+        user, password, host, port = match.groups()
         return {
-            "user": parts[0],
-            "password": parts[1],
-            "host": parts[2],
-            "port": int(parts[3]),
-            "database": parts[4] if len(parts) > 4 else None,
+            "user": user,
+            "password": password,
+        "host": host,
+        "port": int(port),
         }
 
     @staticmethod
