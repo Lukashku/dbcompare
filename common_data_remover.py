@@ -1,115 +1,80 @@
-import mysql.connector
-import argparse
-import os
+import logging
+
 
 class CommonDataRemover:
-    def __init__(self):
-        self.total_deleted_lines = 0
 
-    @staticmethod
-    def table_exists(cursor, table_name, database):
-        cursor.execute("SHOW TABLES IN {}".format(database))
-        tables = [item[0] for item in cursor.fetchall()]
-        return table_name in tables
+    def remove_common_data(self, cursor1, cursor2, args, logger=None):
+        """
+        Removes common data between two database tables.
 
-    def remove_common_data(self, cursor1, cursor2, table_name, database, args, verbose=False, exclude=None, log_filepath=None):
-            # Check argument types
-        database = str(database)
-        if isinstance(args, Namespace):
-            table_name = args.table_name
-            database = args.database
-            exact = args.exact
-            verbose = args.verbose
-            exclude = args.exclude
-        else:
+        Args:
+            cursor1: The cursor for the first database connection.
+            cursor2: The cursor for the second database connection.
+            args: An object containing parsed command-line arguments.
+            logger: An optional logging object.
+        """
+
+        if not isinstance(args, Namespace):
             raise TypeError("Arguments must be provided through a Namespace object")
-        if not isinstance(table_name, str):
-            raise TypeError("Argument 'table_name' must be a string")
-        if not isinstance(database, str):
-            raise TypeError("Argument 'database' must be a string")
-        # Set default logfile path if not provided
-        if log_filepath is None:
-            log_filepath = os.path.join(os.getcwd(), 'logfile.txt')
-            # Check if args is a Namespace object
 
-        # Fetch column names from information_schema
-        try:
-            # Extract necessary values from args
-            column_query = "SELECT COLUMN_NAME FROM information_schema.COLUMNS WHERE TABLE_NAME = %s AND TABLE_SCHEMA = %s"
-            cursor1.execute(column_query, (table_name, database))
-            columns = [column[0] for column in cursor1.fetchall()]
+        table1, table2 = self._get_table_names(args.database, args.table)
 
-            # Check if the first column is 'id' or 'ID' and exclude it from comparisons
-            if columns and columns[0].lower() == 'id' and not args.exact:
-                columns_to_exclude = ['id']
-            else:
-                columns_to_exclude = []
+        if args.verbose:
+            logger.info(f"Removing common data from tables:")
+            logger.info(f"- {table1}")
+            logger.info(f"- {table2}")
 
-            # Construct the DELETE statement
-            delete_conditions = " AND ".join([f"{column} = %s" for column in columns if column.lower() not in columns_to_exclude])
+        self._remove_common_data_from_tables(cursor1, cursor2, table1, table2, args, logger)
 
-            if delete_conditions:
-                delete_statement = f"DELETE FROM {database}.{table_name} WHERE {delete_conditions}"
-            else:
-                # No columns to exclude, delete all rows
-                delete_statement = f"DELETE FROM {database}.{table_name}"
+    def _get_table_names(self, database, table):
+        """
+        Extracts table names from provided arguments.
 
-            # Convert boolean values to integers for SQL query
-            args_exact_int = 1 if args.exact else 0
+        Args:
+            database: The database name.
+            table: The optional table name.
 
-            # Fetch and remove common data
-            cursor1.execute(f"SELECT * FROM {database}.{table_name}")
-            data1 = set(tuple(cell if not isinstance(cell, bytearray) else bytes(cell) for cell in row) for row in cursor1.fetchall())
+        Returns:
+            A tuple containing the names of the first and second tables.
+        """
 
-            cursor2.execute(f"SELECT * FROM {database}.{table_name}")
-            data2 = set(tuple(cell if not isinstance(cell, bytearray) else bytes(cell) for cell in row) for row in cursor2.fetchall())
+        if table:
+            return (f"{database}.{table}", f"{database}.{table}")
+        else:
+            tables = database.split(",")
+            return (tables[0], tables[1])
 
-            # Create a set of identifiers for each row based on non-excluded columns
-            identifier_func = lambda row: tuple(value for column, value in zip(columns, row) if column.lower() not in columns_to_exclude)
-            unique_data1 = set(identifier_func(row) for row in data1)
-            unique_data2 = set(identifier_func(row) for row in data2)
+    def _remove_common_data_from_tables(self, cursor1, cursor2, table1, table2, args, logger):
+        """
+        Performs the actual data removal operation on two specified tables.
 
-            # Find the common identifiers and execute the DELETE statement for each
-            common_identifiers = unique_data1.intersection(unique_data2)
+        Args:
+            cursor1: The cursor for the first database connection.
+            cursor2: The cursor for the second database connection.
+            table1: The name of the first table.
+            table2: The name of the second table.
+            args: An object containing parsed command-line arguments.
+            logger: An optional logging object.
+        """
 
-            count = 0
+        # Get primary key information for both tables
+        primary_key1 = self._get_primary_key(cursor1, table1)
+        primary_key2 = self._get_primary_key(cursor2, table2)
 
-            print(f"Table: {table_name}")
-            print(f"Common Identifiers: {common_identifiers}")
+        # Compare data and prepare deletion statements
+        delete_statements = []
+        for row in self._get_data_from_table(cursor1, table1, args.exclude):
+            matching_row = self._find_matching_row(cursor2, table2, row, primary_key1, primary_key2, args.exact)
+            if matching_row:
+                # Construct DELETE statement based on matching row
+                delete_statements.append(f"DELETE FROM {table2} WHERE {primary_key2} = {matching_row[primary_key2]}")
 
-            if log_filepath:
-                with open(log_filepath, "a") as log_file:
-                    for identifier in common_identifiers:
-                        print(f"Processing Identifier: {identifier}")
-                        cursor1.execute(delete_statement, identifier)
-                        count += 1
-                        self.total_deleted_lines += 1  # Update the class attribute
+        # Execute DELETE statements in batches
+        batch_size = 100
+        for i in range(0, len(delete_statements), batch_size):
+            cursor2.executemany("\n".join(delete_statements[i:i + batch_size]))
+            conn2.commit()
 
-                        if verbose:
-                            # Construct and print the DELETE statement
-                            delete_statement_with_values = delete_statement % identifier
-                            print(f"DELETE STATEMENT: {delete_statement_with_values}")
-
-                            # Print information about the identified common row
-                            print(f"Common Row Information:")
-                            cursor1.execute(f"SELECT * FROM {database}.{table_name} WHERE {' AND '.join([f'{column} = %s' for column in columns])}", identifier)
-                            common_row = cursor1.fetchone()
-                            print(common_row)
-
-                            # Log the delete command to the file
-                            log_file.write(f"{delete_statement_with_values}\n")
-
-                # Print information about the process
-                print(f"Processed {count} common rows in table {table_name}")
-
-        except mysql.connector.errors.ProgrammingError as e:
-            # Handle the table not found error
-            if "Table" in str(e) and "doesn't exist" in str(e):
-                print(f"Table {table_name} doesn't exist in {database}. Skipping...")
-            else:
-                # For other ProgrammingError exceptions, raise the error
-                raise e
-
-# Instantiate CommonDataRemover
-common_data_remover = CommonDataRemover()
+        if logger:
+            logger.info(f"Removed {len(delete_statements)} rows from {table2}")
 

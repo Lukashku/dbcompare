@@ -1,34 +1,68 @@
-import re
+import mysql.connector
 
 class DatabaseUtils:
-    @staticmethod
-    def get_database_names(cursor):
-        cursor.execute("SHOW DATABASES")
-        return [row[0] for row in cursor.fetchall()]
 
     @staticmethod
-    def get_table_names(cursor, database):
-        cursor.execute(f"USE {database}")
-        cursor.execute("SHOW TABLES")
-        return [row[0] for row in cursor.fetchall()]
+    def connect_and_list_databases(connection_string):
+        """
+        Connects to a database and lists available databases.
 
-    @staticmethod
-    def exclude_databases(databases, exclude):
-        return [db for db in databases if db not in exclude]
+        Args:
+            connection_string: The database connection string.
+
+        Returns:
+            A list of database names.
+        """
+
+        with mysql.connector.connect(**parse_connection_string(connection_string)) as conn:
+            cursor = conn.cursor()
+            cursor.execute("SHOW DATABASES")
+            return [row[0] for row in cursor.fetchall()]
 
     @staticmethod
     def parse_connection_string(connection_string):
-        match = re.match(r'([^:@]+)(?::([^@]+))?@([^:]+):(\d+)', connection_string)
-        if match:
-            user, password, host, port = match.groups()
-            return user, password, host, int(port)
-        else:
-            raise ValueError("Invalid connection string format")
+        """
+        Parses a connection string into individual components.
 
-    # Add the table_exists method to DatabaseUtils
+        Args:
+            connection_string: The database connection string.
+
+        Returns:
+            A dictionary containing parsed connection parameters.
+        """
+
+        parts = connection_string.split(":", 4)
+        return {
+            "user": parts[0],
+            "password": parts[1],
+            "host": parts[2],
+            "port": int(parts[3]),
+            "database": parts[4] if len(parts) > 4 else None,
+        }
+
     @staticmethod
-    def table_exists(cursor, table_name, database):
-        cursor.execute("SHOW TABLES IN {}".format(database))
-        tables = [row[0] for row in cursor.fetchall()]
-        return table_name in tables
+    def connect_to_databases(server1_connection_string, server2_connection_string):
+        """
+        Connects to two databases based on provided connection strings.
+
+        Args:
+            server1_connection_string: The connection string for server 1.
+            server2_connection_string: The connection string for server 2.
+
+        Returns:
+            A tuple containing database connections for server 1 and server 2.
+        """
+
+        server1_connection_parameters = DatabaseUtils.parse_connection_string(
+            server1_connection_string
+        )
+        server2_connection_parameters = DatabaseUtils.parse_connection_string(
+            server2_connection_string
+        )
+
+        return (
+            mysql.connector.connect(**server1_connection_parameters),
+            mysql.connector.connect(**server2_connection_parameters),
+        )
+
 
