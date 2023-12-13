@@ -3,9 +3,7 @@ import mysql.connector
 from prettytable import PrettyTable
 from database_utils import DatabaseUtils
 from common_data_remover import CommonDataRemover
-
-global args
-args = None
+import sys
 
 def list_databases(server, user, password, host, port):
     conn = mysql.connector.connect(
@@ -26,26 +24,20 @@ def list_databases(server, user, password, host, port):
     return table
 
 def compare_databases(cursor1, cursor2, args):
-    # If a specific table is specified, compare only that table
-    if args.table:
-        tables = [args.table]
-    else:
-        # Fetch the list of tables from both databases
-        tables = DatabaseUtils.get_table_names(cursor1, args.database)
-
+    tables = args['table'].split(',') if args.get('table') else DatabaseUtils.get_table_names(cursor1, args['database'])
+    
     for table in tables:
         print(f"Table: {table}")
+        print(f"Database {args['database']}")
         CommonDataRemover.remove_common_data(
-            cursor1, cursor2, table, args.database,
-            args,  # Pass the entire args object
-            args.verbose if args else False,
-            args.exclude if args else None,
-            getattr(args, 'log_filepath', None) if args else None
+            cursor1, cursor2, table.strip(), args['database'],
+            args.get('verbose', False),
+            args.get('exclude'),
+            args.get('log_filepath')
         )
-
     print("Comparison complete.")
+
 def main():
-    # Parse command-line arguments
     parser = argparse.ArgumentParser(description='Compare and remove common data between two MySQL databases.')
     parser.add_argument('--server1', required=True, help='Connection string for server1, e.g., user:password@host:port')
     parser.add_argument('--server2', required=True, help='Connection string for server2, e.g., user:password@host:port')
@@ -58,12 +50,11 @@ def main():
     parser.add_argument('-L', '--list', action='store_true', help='List databases from each server and exit')
     parser.add_argument('--log-file', help='Specify a log file path')
 
-    args = parser.parse_args()
+    args = vars(parser.parse_args())
 
-    # Check for required argument and handle list functionality
-    if args.list:
-        user1, password1, host1, port1 = DatabaseUtils.parse_connection_string(args.server1)
-        user2, password2, host2, port2 = DatabaseUtils.parse_connection_string(args.server2)
+    if args['list']:
+        user1, password1, host1, port1 = DatabaseUtils.parse_connection_string(args['server1'])
+        user2, password2, host2, port2 = DatabaseUtils.parse_connection_string(args['server2'])
 
         table_server1 = list_databases("Server 1", user1, password1, host1, port1)
         table_server2 = list_databases("Server 2", user2, password2, host2, port2)
@@ -77,43 +68,38 @@ def main():
 
         return
 
-    if not args.database:
+    if not args['database']:
         print("Error: --database is required.")
         parser.print_help()
         sys.exit(1)
 
-    # Connect to databases and create cursors
-    user1, password1, host1, port1 = DatabaseUtils.parse_connection_string(args.server1)
-    user2, password2, host2, port2 = DatabaseUtils.parse_connection_string(args.server2)
-
-    print(f"Connection String 1: user={user1}, password={password1}, host={host1}, port={port1}")
-    print(f"Connection String 2: user={user2}, password={password2}, host={host2}, port={port2}")
+    user1, password1, host1, port1 = DatabaseUtils.parse_connection_string(args['server1'])
+    user2, password2, host2, port2 = DatabaseUtils.parse_connection_string(args['server2'])
 
     conn1 = mysql.connector.connect(
         host=host1,
         user=user1,
         password=password1,
-        port=port1
+        port=port1,
+        database=args['database']
     )
 
     conn2 = mysql.connector.connect(
         host=host2,
         user=user2,
         password=password2,
-        port=port2
+        port=port2,
+        database=args['database']
     )
 
     cursor1 = conn1.cursor()
     cursor2 = conn2.cursor()
 
-    # Call compare_databases function with args
-    compare_databases(cursor1, cursor2, args.__dict__)
+    compare_databases(cursor1, cursor2, args)
 
     conn1.commit()
-
     conn1.close()
     conn2.close()
 
 if __name__ == "__main__":
     main()
-

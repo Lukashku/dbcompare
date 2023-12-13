@@ -1,61 +1,34 @@
 import mysql.connector
-from argparse import Namespace
 import os
 
 class CommonDataRemover:
-    def __init__(self):
-        self.total_deleted_lines = 0
+    total_deleted_lines = 0
 
     @staticmethod
     def table_exists(cursor, table_name, database):
         cursor.execute("SHOW TABLES IN {}".format(database))
         tables = [item[0] for item in cursor.fetchall()]
         return table_name in tables
-
-    def remove_common_data(self, cursor1, cursor2, table_name, database, args, verbose=False, exclude=None, log_filepath=None):
-            # Check argument types
-        database = str(database)
-        if type(args) is not Namespace:
-            table_name = args.table_name
-            database = args.database
-            exact = args.exact
-            verbose = args.verbose
-            exclude = args.exclude
-        else:
-            raise TypeError("Arguments must be provided through a Namespace object")
-        if not isinstance(table_name, str):
-            raise TypeError("Argument 'table_name' must be a string")
-        if not isinstance(database, str):
-            raise TypeError("Argument 'database' must be a string")
+    
+    @staticmethod
+    def remove_common_data(cursor1, cursor2, table_name, database, verbose, exclude, log_filepath=None):
         # Set default logfile path if not provided
-        if log_filepath is None:
-            log_filepath = os.path.join(os.getcwd(), 'logfile.txt')
-            # Check if args is a Namespace object
-
+        log_filepath = log_filepath or os.path.join(os.getcwd(), 'logfile.txt')
+        print(table_name, database)
         # Fetch column names from information_schema
         try:
-            # Extract necessary values from args
-            column_query = "SELECT COLUMN_NAME FROM information_schema.COLUMNS WHERE TABLE_NAME = %s AND TABLE_SCHEMA = %s"
-            cursor1.execute(column_query, (table_name, database))
+            #column_query = "SELECT COLUMN_NAME FROM information_schema.COLUMNS WHERE TABLE_NAME = %s AND TABLE_SCHEMA = %s"
+            #cursor1.execute(column_query, (table_name, database))
+            cursor1.execute(f"SELECT COLUMN_NAME FROM information_schema.COLUMNS WHERE TABLE_NAME = '{table_name}' AND TABLE_SCHEMA = '{database}'")
             columns = [column[0] for column in cursor1.fetchall()]
+            print(columns)
 
             # Check if the first column is 'id' or 'ID' and exclude it from comparisons
-            if columns and columns[0].lower() == 'id' and not args.exact:
-                columns_to_exclude = ['id']
-            else:
-                columns_to_exclude = []
+            columns_to_exclude = ['id'] if columns and columns[0].lower() == 'id' and not exclude else []
 
             # Construct the DELETE statement
             delete_conditions = " AND ".join([f"{column} = %s" for column in columns if column.lower() not in columns_to_exclude])
-
-            if delete_conditions:
-                delete_statement = f"DELETE FROM {database}.{table_name} WHERE {delete_conditions}"
-            else:
-                # No columns to exclude, delete all rows
-                delete_statement = f"DELETE FROM {database}.{table_name}"
-
-            # Convert boolean values to integers for SQL query
-            args_exact_int = 1 if args.exact else 0
+            delete_statement = f"DELETE FROM {database}.{table_name} WHERE {delete_conditions}" if delete_conditions else f"DELETE FROM {database}.{table_name}"
 
             # Fetch and remove common data
             cursor1.execute(f"SELECT * FROM {database}.{table_name}")
@@ -80,24 +53,24 @@ class CommonDataRemover:
             if log_filepath:
                 with open(log_filepath, "a") as log_file:
                     for identifier in common_identifiers:
-                        print(f"Processing Identifier: {identifier}")
                         cursor1.execute(delete_statement, identifier)
                         count += 1
-                        self.total_deleted_lines += 1  # Update the class attribute
+                        CommonDataRemover.total_deleted_lines += 1  # Update the class attribute
+
+                        # Construct the DELETE statement
+                        delete_statement_with_values = delete_statement % identifier
 
                         if verbose:
-                            # Construct and print the DELETE statement
-                            delete_statement_with_values = delete_statement % identifier
+                            print(f"Processing Identifier: {identifier}")
                             print(f"DELETE STATEMENT: {delete_statement_with_values}")
-
                             # Print information about the identified common row
                             print(f"Common Row Information:")
                             cursor1.execute(f"SELECT * FROM {database}.{table_name} WHERE {' AND '.join([f'{column} = %s' for column in columns])}", identifier)
                             common_row = cursor1.fetchone()
                             print(common_row)
 
-                            # Log the delete command to the file
-                            log_file.write(f"{delete_statement_with_values}\n")
+                        # Log the delete command to the file
+                        log_file.write(f"{delete_statement_with_values}\n")
 
                 # Print information about the process
                 print(f"Processed {count} common rows in table {table_name}")
@@ -109,7 +82,7 @@ class CommonDataRemover:
             else:
                 # For other ProgrammingError exceptions, raise the error
                 raise e
-
+            
 # Instantiate CommonDataRemover
 common_data_remover = CommonDataRemover()
 
