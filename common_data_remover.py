@@ -57,7 +57,7 @@ class CommonDataRemover:
             log_filepath = os.path.join(log_dir, f"{table_name}_log.txt")
 
             if log_filepath:
-                with open(log_file_path, 'w', encoding='utf-8') as log_file:  # Open the file in write mode
+                with open(log_filepath, 'w', encoding='utf-8') as log_file:  # Open the file in write mode
                     for identifier in common_identifiers:
                         cursor1.execute(delete_statement, identifier)
                         count += 1

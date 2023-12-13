@@ -4,6 +4,7 @@ from prettytable import PrettyTable
 from database_utils import DatabaseUtils
 from common_data_remover import CommonDataRemover
 import sys
+from wordpress_analyze import WordpressAnalyze
 import os
 
 
@@ -60,6 +61,11 @@ def main():
     parser.add_argument('-L', '--list', action='store_true', help='List databases from each server and exit')
     parser.add_argument('--log-output', default=None, help='The directory to output log files to')
 
+    subparsers = parser.add_subparsers(dest='command')
+
+    wordpress_parser = subparsers.add_parser('wordpress', help='Enable WordPress-specific analysis')
+    wordpress_parser.add_argument('--basic', action='store_true', help='Perform basic WordPress analysis')
+
     args = vars(parser.parse_args())
 
     if args['list']:
@@ -105,7 +111,11 @@ def main():
     cursor1 = conn1.cursor()
     cursor2 = conn2.cursor()
 
-    compare_databases(cursor1, cursor2, args)
+    if args.get('command') == 'wordpress':
+        wordpress_analyzer = WordpressAnalyze(cursor1, cursor2, args)
+        wordpress_analyzer.analyze_basic()
+    else:
+        compare_databases(cursor1, cursor2, args)
 
     conn1.commit()
     conn1.close()

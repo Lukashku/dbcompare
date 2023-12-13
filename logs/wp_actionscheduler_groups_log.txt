@@ -1,0 +1,2 @@
+DELETE FROM esquirebank.wp_actionscheduler_groups WHERE group_id = 2 AND slug = wsal-log-alert
+DELETE FROM esquirebank.wp_actionscheduler_groups WHERE group_id = 1 AND slug = action-scheduler-migration

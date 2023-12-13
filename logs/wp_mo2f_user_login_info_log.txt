@@ -1,0 +1,1 @@
+DELETE FROM esquirebank.wp_mo2f_user_login_info WHERE session_id = M9832sJoP3y4C14OmY2D AND mo2f_login_message =  AND mo2f_current_user_id = 8 AND mo2f_1stfactor_status = VALIDATE_SUCCESS AND mo_2factor_login_status =  AND mo2f_transactionId =  AND mo_2_factor_kba_questions =  AND mo2f_rba_status =  AND ts_created = 2020-12-23 14:35:22
