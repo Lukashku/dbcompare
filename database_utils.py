@@ -3,7 +3,7 @@ import mysql.connector
 class DatabaseUtils:
 
     @staticmethod
-    def connect_and_list_databases(connection_string):
+    def connect_and_list_databases(connection_string, parse_connection_string_func):
         """
         Connects to a database and lists available databases.
 
@@ -13,7 +13,6 @@ class DatabaseUtils:
         Returns:
             A list of database names.
         """
-
         with mysql.connector.connect(**parse_connection_string(connection_string)) as conn:
             cursor = conn.cursor()
             cursor.execute("SHOW DATABASES")

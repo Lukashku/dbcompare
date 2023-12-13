@@ -64,8 +64,10 @@ def main():
     args = parser.parse_args()
 
     if args.list:
-        server1_databases = DatabaseUtils.connect_and_list_databases(args.server1)
-        server2_databases = DatabaseUtils.connect_and_list_databases(args.server2)
+        server1_databases = DatabaseUtils.connect_and_list_databases(
+    args.server1, DatabaseUtils.parse_connection_string)
+        server2_databases = DatabaseUtils.connect_and_list_databases(
+    args.server2, DatabaseUtils.parse_connection_string)
 
         logger.info("Server 1 Databases:")
         for database in server1_databases:
