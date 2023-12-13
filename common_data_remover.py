@@ -1,4 +1,5 @@
 import mysql.connector
+import argparse
 import os
 
 class CommonDataRemover:
@@ -12,9 +13,22 @@ class CommonDataRemover:
         return table_name in tables
 
     def remove_common_data(self, cursor1, cursor2, table_name, database, args, verbose=False, exclude=None, log_filepath=None):
+            # Check argument types
+        database = str(database)
+        if not isinstance(table_name, str):
+            raise TypeError("Argument 'table_name' must be a string")
+        if not isinstance(database, str):
+            raise TypeError("Argument 'database' must be a string")
         # Set default logfile path if not provided
         if log_filepath is None:
             log_filepath = os.path.join(os.getcwd(), 'logfile.txt')
+            # Check if args is a Namespace object
+        if isinstance(args, Namespace):
+            args = vars(args)  # Convert Namespace to dictionary
+            # Extract specific attributes from args
+        exact = getattr(args, "exact", False)
+        verbose = getattr(args, "verbose", False)
+        exclude = getattr(args, "exclude", None)
 
         # Fetch column names from information_schema
         try:
