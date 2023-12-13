@@ -12,9 +12,12 @@ class CommonDataRemover:
     
     @staticmethod
     def remove_common_data(cursor1, cursor2, table_name, database, verbose, exclude, log_filepath=None):
-        # Set default logfile path if not provided
-        log_filepath = log_filepath or os.path.join(os.getcwd(), 'logfile.txt')
-        print(table_name, database)
+
+        if log_filepath is not None:
+            log_dir = log_filepath
+        else:
+            log_dir = os.path.join(os.getcwd(), "logs")
+        os.makedirs(log_dir, exist_ok=True)  # Ensure the directory exists
         # Fetch column names from information_schema
         try:
             #column_query = "SELECT COLUMN_NAME FROM information_schema.COLUMNS WHERE TABLE_NAME = %s AND TABLE_SCHEMA = %s"
@@ -47,11 +50,14 @@ class CommonDataRemover:
 
             count = 0
 
-            print(f"Table: {table_name}")
-            print(f"Common Identifiers: {common_identifiers}")
+            #print(f"Table: {table_name}")
+            #print(f"Common Identifiers: {common_identifiers}")
+
+            # Create a log file for the current table
+            log_filepath = os.path.join(log_dir, f"{table_name}_log.txt")
 
             if log_filepath:
-                with open(log_filepath, "a") as log_file:
+                with open(log_file_path, 'w', encoding='utf-8') as log_file:  # Open the file in write mode
                     for identifier in common_identifiers:
                         cursor1.execute(delete_statement, identifier)
                         count += 1

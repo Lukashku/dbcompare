@@ -4,7 +4,8 @@ from prettytable import PrettyTable
 from database_utils import DatabaseUtils
 from common_data_remover import CommonDataRemover
 import sys
-import keyboard
+import os
+
 
 def list_databases(server, user, password, host, port):
     conn = mysql.connector.connect(
@@ -25,16 +26,24 @@ def list_databases(server, user, password, host, port):
     return table
 
 def compare_databases(cursor1, cursor2, args):
-    tables = args['table'].split(',') if args.get('table') else DatabaseUtils.get_table_names(cursor1, args['database'])
-    
+    all_tables = [x.strip() for x in args['table'].split(',')] if args.get('table') else DatabaseUtils.get_table_names(cursor1, args['database'])
+    exclude_tables = [x.strip() for x in args['exclude'].split(',')] if args.get('exclude') else []
+    tables = [x for x in all_tables if x not in exclude_tables]
+    print(tables)
+
+    print(exclude_tables)
     for table in tables:
-        print(f"Table: {table}")
-        print(f"Database {args['database']}")
-        CommonDataRemover.remove_common_data(
-            cursor1, cursor2, table.strip(), args['database'],
-            args.get('verbose', False),
-            args.get('exclude'),
-            args.get('log_filepath')
+            
+            #print(f"Table: {table}")
+            #print(f"Database {args['database']}")
+            CommonDataRemover.remove_common_data(
+                cursor1,
+                cursor2,
+                table,
+                args['database'],
+                args['verbose'],
+                args['exclude'],
+                args['log_output']  # Pass the current working directory as the log_dir argument
         )
     print("Comparison complete.")
 
@@ -49,14 +58,9 @@ def main():
     parser.add_argument('--exact', action='store_true', help='Enable exact matching, including the id column')
     parser.add_argument('--exclude', '-xt', dest='exclude', help='Tables to exclude, separated by commas')
     parser.add_argument('-L', '--list', action='store_true', help='List databases from each server and exit')
-    parser.add_argument('--log-file', help='Specify a log file path')
+    parser.add_argument('--log-output', default=None, help='The directory to output log files to')
 
     args = vars(parser.parse_args())
-
-    # Register the status key
-    def print_status(e):
-        print(f"Total deleted lines: {CommonDataRemover.total_deleted_lines}")
-    keyboard.on_press_key(args['status_key'], print_status)
 
     if args['list']:
         user1, password1, host1, port1 = DatabaseUtils.parse_connection_string(args['server1'])
@@ -106,7 +110,6 @@ def main():
     conn1.commit()
     conn1.close()
     conn2.close()
-    # Unregister the status key at the end of your program
-    keyboard.unhook_all()
+
 if __name__ == "__main__":
     main()
