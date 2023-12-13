@@ -107,7 +107,7 @@ def main():
     cursor2 = conn2.cursor()
 
     # Call compare_databases function with args
-    compare_databases(cursor1, cursor2, args)
+    compare_databases(cursor1, cursor2, args.__dict__)
 
     conn1.commit()
 

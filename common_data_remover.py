@@ -1,5 +1,5 @@
 import mysql.connector
-import argparse
+from argparse import Namespace
 import os
 
 class CommonDataRemover:
@@ -15,7 +15,7 @@ class CommonDataRemover:
     def remove_common_data(self, cursor1, cursor2, table_name, database, args, verbose=False, exclude=None, log_filepath=None):
             # Check argument types
         database = str(database)
-        if isinstance(args, Namespace):
+        if type(args) is not Namespace:
             table_name = args.table_name
             database = args.database
             exact = args.exact
