@@ -65,6 +65,8 @@ def main():
 
     wordpress_parser = subparsers.add_parser('wordpress', help='Enable WordPress-specific analysis')
     wordpress_parser.add_argument('--basic', action='store_true', help='Perform basic WordPress analysis')
+    wordpress_parser.add_argument('--wp-users', action='store_true', help='Analyzes the wp_users table')
+    wordpress_parser.add_argument('--wp-options', action='store_true', help='Analyzes the wp_options table')
 
     args = vars(parser.parse_args())
 
@@ -113,7 +115,14 @@ def main():
 
     if args.get('command') == 'wordpress':
         wordpress_analyzer = WordpressAnalyze(cursor1, cursor2, args)
-        wordpress_analyzer.analyze_basic()
+        if args['wp_users']:
+            wordpress_analyzer.wp_users()
+        if args['wp_options']:
+            wordpress_analyzer.wp_options()
+        else:
+            print("Error: No command specified.")
+            wordpress_parser.print_help()
+            sys.exit(1)
     else:
         compare_databases(cursor1, cursor2, args)
 
