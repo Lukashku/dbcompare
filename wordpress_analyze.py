@@ -1,5 +1,3 @@
-import phpserialize
-import pprint
 
 class WordpressAnalyze:
     def __init__(self, cursor1, cursor2, args):
