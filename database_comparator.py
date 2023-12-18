@@ -29,3 +29,23 @@ class DatabaseComparator:
 
                 if table is None or (table and table == t1):
                     CommonDataRemover.remove_common_data(cursor1, cursor2, t1, db1, exact, verbose)
+
+    @staticmethod
+    def compare_databases_with_args(cursor1, cursor2, args):
+        all_tables = [x.strip() for x in args['table'].split(',')] if args.get('table') else DatabaseUtils.get_table_names(cursor1, args['database'])
+        exclude_tables = [x.strip() for x in args['exclude'].split(',')] if args.get('exclude') else []
+        tables = [x for x in all_tables if x not in exclude_tables]
+        print(tables)
+
+        print(exclude_tables)
+        for table in tables:
+            CommonDataRemover.remove_common_data(
+                cursor1,
+                cursor2,
+                table,
+                args['database'],
+                args['verbose'],
+                args['exclude'],
+                args['log_output']  # Pass the current working directory as the log_dir argument
+        )
+        print("Comparison complete.")

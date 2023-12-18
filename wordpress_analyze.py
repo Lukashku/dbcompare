@@ -1,3 +1,4 @@
+import sys
 
 class WordpressAnalyze:
     def __init__(self, cursor1, cursor2, args):
@@ -118,3 +119,13 @@ class WordpressAnalyze:
             # Check if any of the important options have been deleted
             if option["name"] in deleted_options:
                 print(f"Deleted Option Name: {option['name']}\nDescription: {option['description']}\nValue: {options2[option['name']]}\n")
+
+    def main(self):
+        if self.args['wp_users']:
+            self.wp_users()
+        elif self.args['wp_options']:
+            self.wp_options()
+        else:
+            print("Error: No command specified.")
+            self.wordpress_parser.print_help()
+            sys.exit(1)
