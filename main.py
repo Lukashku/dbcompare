@@ -6,6 +6,17 @@ from common_data_remover import CommonDataRemover
 from wordpress_analyze import WordpressAnalyze
 from sql_info import SQLInfo
 
+# TODO: Add more wordpress-specific analysis
+# TODO: Add Table listing functionality
+# TODO: Add OpenAPI Key checking
+# TODO: Move Log file create to its own file
+# TODO: Logging for SQLInfo and wordpress_analyze??
+# TODO: Move compare_database to database_comparator.py??
+# TODO: Add arguments to its own file
+# TODO: Add more comments to make code more readable
+# TODO: Add more error handling
+
+
 
 def compare_databases(cursor1, cursor2, args):
     all_tables = [x.strip() for x in args['table'].split(',')] if args.get('table') else DatabaseUtils.get_table_names(cursor1, args['database'])
