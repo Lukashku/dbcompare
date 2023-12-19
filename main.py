@@ -1,44 +1,21 @@
-from arg_parser import get_args
 import sys
 import mysql.connector
-from database_utils import DatabaseUtils
-from common_data_remover import CommonDataRemover
-from wordpress_analyze import WordpressAnalyze
 from sql_info import SQLInfo
+from arg_parser import get_args
+from database_utils import DatabaseUtils
+from wordpress_analyze import WordpressAnalyze
 from database_comparator import DatabaseComparator
 
-# TODO: Add more wordpress-specific analysis
-# TODO: Add Table listing functionality  --- DONE
-# TODO: Move Log file create to its own file
-# TODO: Logging for SQLInfo and wordpress_analyze??
-# TODO: Move compare_database to database_comparator.py??
-# TODO: Add arguments to its own file
-# TODO: Add more comments to make code more readable
-# TODO: Add more error handling
+# TODO: Add more wordpress-specific analysis MEDIUM-BIG
+# TODO: Logging for SQLInfo and wordpress_analyze?? MEDIUM
+# TODO: Add more comments to make code more readable SMALL
+# TODO: Add more error handling MEDIUM
+# TODO: Figure out verbose output situation SMALL
+# TODO: Function to parse data? BIG
+# TODO: Redo README SMALL
+# TODO: Remove unecessary print statements/commented out code SMALL
+# TODO: Create a database analysis type function. MEDIUM-BIG
 
-
-
-# def compare_databases(cursor1, cursor2, args):
-#     all_tables = [x.strip() for x in args['table'].split(',')] if args.get('table') else DatabaseUtils.get_table_names(cursor1, args['database'])
-#     exclude_tables = [x.strip() for x in args['exclude'].split(',')] if args.get('exclude') else []
-#     tables = [x for x in all_tables if x not in exclude_tables]
-#     print(tables)
-
-#     print(exclude_tables)
-#     for table in tables:
-            
-#             #print(f"Table: {table}")
-#             #print(f"Database {args['database']}")
-#             CommonDataRemover.remove_common_data(
-#                 cursor1,
-#                 cursor2,
-#                 table,
-#                 args['database'],
-#                 args['verbose'],
-#                 args['exclude'],
-#                 args['log_output']  # Pass the current working directory as the log_dir argument
-#         )
-#     print("Comparison complete.")
 
 def get_connection_details(server, args):
     user, password, host, port = DatabaseUtils.parse_connection_string(server)

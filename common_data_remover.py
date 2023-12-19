@@ -1,5 +1,7 @@
-import mysql.connector
 import os
+import mysql.connector
+from log_writer import LogWriter
+
 
 class CommonDataRemover:
     total_deleted_lines = 0
@@ -11,17 +13,10 @@ class CommonDataRemover:
         return table_name in tables
     
     @staticmethod
-    def remove_common_data(cursor1, cursor2, table_name, database, verbose, exclude, log_filepath=None):
+    def remove_common_data(cursor1, cursor2, table_name, database, verbose, exclude, log_filepath=None, log_enabled=False):
 
-        if log_filepath is not None:
-            log_dir = log_filepath
-        else:
-            log_dir = os.path.join(os.getcwd(), "logs")
-        os.makedirs(log_dir, exist_ok=True)  # Ensure the directory exists
         # Fetch column names from information_schema
         try:
-            #column_query = "SELECT COLUMN_NAME FROM information_schema.COLUMNS WHERE TABLE_NAME = %s AND TABLE_SCHEMA = %s"
-            #cursor1.execute(column_query, (table_name, database))
             cursor1.execute(f"SELECT COLUMN_NAME FROM information_schema.COLUMNS WHERE TABLE_NAME = '{table_name}' AND TABLE_SCHEMA = '{database}'")
             columns = [column[0] for column in cursor1.fetchall()]
             print(columns)
@@ -50,36 +45,21 @@ class CommonDataRemover:
 
             count = 0
 
-            #print(f"Table: {table_name}")
-            #print(f"Common Identifiers: {common_identifiers}")
+            # In the file where you call write_log method
+            if log_enabled:
+                if log_filepath is None:
+                    log_filepath = os.path.join(os.getcwd(), "logs", database)
+                os.makedirs(log_filepath, exist_ok=True)  # Ensure the directory exists
 
-            # Create a log file for the current table
-            log_filepath = os.path.join(log_dir, f"{table_name}_log.txt")
+                for identifier in common_identifiers:
+                    cursor1.execute(delete_statement, identifier)
+                    count += 1
+                    CommonDataRemover.total_deleted_lines += 1  # Update the class attribute
 
-            if log_filepath:
-                with open(log_filepath, 'w', encoding='utf-8') as log_file:  # Open the file in write mode
-                    for identifier in common_identifiers:
-                        cursor1.execute(delete_statement, identifier)
-                        count += 1
-                        CommonDataRemover.total_deleted_lines += 1  # Update the class attribute
+                    LogWriter.write_log(log_filepath, table_name, delete_statement, identifier, verbose, cursor1, database, columns)
 
-                        # Construct the DELETE statement
-                        delete_statement_with_values = delete_statement % identifier
-
-                        if verbose:
-                            print(f"Processing Identifier: {identifier}")
-                            print(f"DELETE STATEMENT: {delete_statement_with_values}")
-                            # Print information about the identified common row
-                            print(f"Common Row Information:")
-                            cursor1.execute(f"SELECT * FROM {database}.{table_name} WHERE {' AND '.join([f'{column} = %s' for column in columns])}", identifier)
-                            common_row = cursor1.fetchone()
-                            print(common_row)
-
-                        # Log the delete command to the file
-                        log_file.write(f"{delete_statement_with_values}\n")
-
-                # Print information about the process
-                print(f"Processed {count} common rows in table {table_name}")
+            # Print information about the process
+            print(f"Processed {count} common rows in table {table_name}")
 
         except mysql.connector.errors.ProgrammingError as e:
             # Handle the table not found error

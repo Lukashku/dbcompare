@@ -1,11 +1,9 @@
-import openai
-from openai import OpenAI
-import sys
 import os
-from database_utils import DatabaseUtils
-from prettytable import PrettyTable
+import openai
 import mysql.connector
-
+from openai import OpenAI
+from prettytable import PrettyTable
+from database_utils import DatabaseUtils
 
 class SQLInfo:
     # Initialize the SQLInfo class with two database cursors and command line arguments
@@ -104,15 +102,15 @@ class SQLInfo:
         # Get the names of the databases on the server
         databases = DatabaseUtils.get_database_names(cursor)
 
-        # Print the names of the databases in a table
-        table = PrettyTable(["Databases on {}".format(server)])
+        # Create a PrettyTable instance for the databases
+        table = PrettyTable()
+        table.field_names = ["Databases on {}".format(server)]
         table.align["Databases on {}".format(server)] = 'l'
         for database in databases:
             table.add_row([database])
 
         conn.close()
-        print(table)
-        return table
+        return table  # Return the table instead of printing it
     
     def list_tables(self, user, password, host, port, database):
         # Connect to the server
@@ -134,21 +132,29 @@ class SQLInfo:
             output_table.add_row([table])
 
         conn.close()
-        print(output_table)
-        # return table
-
+        
+        return output_table
 
     def main(self):
-        
+
         if self.args['list']:
             user1, password1, host1, port1 = DatabaseUtils.parse_connection_string(self.args['server1'])
-            self.list_databases("Server 1", user1, password1, host1, port1)
+            table1 = str(self.list_databases("Server 1", user1, password1, host1, port1)).splitlines()
             
             if self.args['server2']:
                 user2, password2, host2, port2 = DatabaseUtils.parse_connection_string(self.args['server2'])
-                self.list_databases("Server 2", user2, password2, host2, port2)
+                table2 = str(self.list_databases("Server 2", user2, password2, host2, port2)).splitlines()
+                
+                # Get the maximum number of lines in the two tables
+                max_lines = max(len(table1), len(table2))
+                
+                # Print the tables side by side
+                for i in range(max_lines):
+                    row1 = table1[i] if i < len(table1) else ''
+                    row2 = table2[i] if i < len(table2) else ''
+                    print(f"{row1:<30} {row2}")
             else:
-                pass
+                print('\n'.join(table1))  # Print only the first table
 
         if self.args['tables']:
             if self.args['database'] is None:
@@ -156,10 +162,20 @@ class SQLInfo:
                 return
             else:
                 user1, password1, host1, port1 = DatabaseUtils.parse_connection_string(self.args['server1'])
-                self.list_tables(user1, password1, host1, port1, self.args['database'])
+                table1 = str(self.list_tables(user1, password1, host1, port1, self.args['database'])).splitlines()
                 if self.args["server2"]:
                     user2, password2, host2, port2 = DatabaseUtils.parse_connection_string(self.args['server2'])
-                    self.list_tables(user2, password2, host2, port2, self.args['database'])
+                    table2 = str(self.list_tables(user2, password2, host2, port2, self.args['database'])).splitlines()
+                                    # Get the maximum number of lines in the two tables
+                    max_lines = max(len(table1), len(table2))
+                    
+                    # Print the tables side by side
+                    for i in range(max_lines):
+                        row1 = table1[i] if i < len(table1) else ''
+                        row2 = table2[i] if i < len(table2) else ''
+                        print(f"{row1:<30} {row2}")
+                else:
+                    print('\n'.join(table1))  # Print only the first table
 
         if self.args['sql_query'] is not None or self.args['openai']:
             if self.args['sql_query'] is not None:
@@ -172,5 +188,5 @@ class SQLInfo:
                 print("Error: --openai must be used with --sql-query.")
                 return
             else:
-                print("Error: Your SQL Query or --openai is required..")
+                print("Error: Your SQL Query or --openai is required.")
                 return

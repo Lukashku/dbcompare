@@ -9,11 +9,11 @@ def get_args():
     main_parser_main.add_argument('--server1', required=True, help='Connection string for server1, e.g., user:password@host:port')
     main_parser_main.add_argument('--server2', required=False, help='Connection string for server2, e.g., user:password@host:port')
     main_parser_main.add_argument('--verbose', action='store_true', help='Enable verbose output')
-    main_parser_main.add_argument('--status-key', default='s', help='Key to trigger status update (default is "s")')
-    main_parser_main.add_argument('--database', required=True, help='Databases to compare, each specified separately')
-    main_parser_main.add_argument('--table', help='Optional: Specify a specific table to compare')
+    main_parser_main.add_argument('--database', '-db', required=True, help='Databases to compare, each specified separately')
+    main_parser_main.add_argument('--table', '-t', help='Optional: Specify a specific table to compare')
     main_parser_main.add_argument('--exact', action='store_true', help='Enable exact matching, including the id column')
     main_parser_main.add_argument('--exclude', '-xt', dest='exclude', help='Tables to exclude, separated by commas')
+    main_parser_main.add_argument('--log', action='store_true', help='Enable logging')
     main_parser_main.add_argument('--log-output', default=None, help='The directory to output log files to')
 
     wordpress_parser = subparsers.add_parser('wordpress', help='Enable WordPress-specific analysis')
@@ -25,11 +25,11 @@ def get_args():
     info_parser = subparsers.add_parser('information', help='Fetch information about and/or query the database(s)')
     info_parser.add_argument('--server1', help='The first server')
     info_parser.add_argument('--server2', required=False, help='The second server (optional)')
-    info_parser.add_argument('-db', '--database', help='The database')
+    info_parser.add_argument('--database', '-db', help='The database')
     info_parser.add_argument('--sql-query', nargs='?', help='The query to execute (optional, only if --openai is passed)')
     info_parser.add_argument('--openai', action='store_true', help='Use OpenAI to generate the SQL query (Experimental)')
-    info_parser.add_argument('-L', '--list', action='store_true', help='List databases from the specified server(s)')
-    info_parser.add_argument('-T', '--tables', action='store_true', help='List tables from the specified database')
+    info_parser.add_argument('--list', '-L', action='store_true', help='List databases from the specified server(s)')
+    info_parser.add_argument('--tables', '-T', action='store_true', help='List tables from the specified database')
 
     return vars(main_parser.parse_args()), main_parser
     

@@ -121,6 +121,7 @@ class WordpressAnalyze:
                 print(f"Deleted Option Name: {option['name']}\nDescription: {option['description']}\nValue: {options2[option['name']]}\n")
 
     def main(self):
+        
         if self.args['wp_users']:
             self.wp_users()
         elif self.args['wp_options']:

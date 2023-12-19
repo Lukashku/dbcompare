@@ -46,6 +46,7 @@ class DatabaseComparator:
                 args['database'],
                 args['verbose'],
                 args['exclude'],
-                args['log_output']  # Pass the current working directory as the log_dir argument
+                args['log_output'],  # Pass the current working directory as the log_dir argument
+                args['log'] 
         )
         print("Comparison complete.")
