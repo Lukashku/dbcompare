@@ -21,9 +21,11 @@ from database_comparator import DatabaseComparator
 # TODO: finish privilege checking
 
 
-
 def get_connection_details(server, args):
+    # Parse the connection string to get the user, password, host, and port
     user, password, host, port = DatabaseUtils.parse_connection_string(server)
+    
+    # Establish a connection to the database
     conn = mysql.connector.connect(
         host=host,
         user=user,
@@ -31,19 +33,27 @@ def get_connection_details(server, args):
         port=port,
         database=args['database']
     )
+    
+    # Create a cursor object
     cursor = conn.cursor()
+    
+    # Return the connection and cursor
     return conn, cursor
 
 def main():
+    # Parse the command line arguments
     args, main_parser = get_args()
 
+    # Get the connection details for the first server
     conn1, cursor1 = get_connection_details(args['server1'], args)
 
+    # If a second server is specified, get its connection details
     if args['server2']:
         conn2, cursor2 = get_connection_details(args['server2'], args)
     else:
         conn2, cursor2 = None, None
 
+    # Execute the appropriate command based on the 'command' argument
     if args['command'] == 'main':
         if not args['database']:
             print("Error: --database is required.")
@@ -57,12 +67,15 @@ def main():
     else:
         DatabaseComparator.compare_databases_with_args(cursor1, cursor2, args)
 
+    # If a second connection was established, commit any changes and close it
     if conn2:
         conn2.commit()
         conn2.close()
 
+    # Commit any changes and close the first connection
     conn1.commit()
     conn1.close()
 
+# If this script is run directly (not imported as a module), call the main function
 if __name__ == "__main__":
     main()

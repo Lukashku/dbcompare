@@ -96,11 +96,6 @@ class WordpressAnalyze:
         # Find the option_values that are in server1 but not in server2 (new)
         new_options = options1_set.difference(options2_set)
 
-        # Print the results
-        # print(f"Common options: {common_options}")
-        # print(f"Deleted options: {deleted_options}")
-        # print(f"New options: {new_options}")
-
         # Check if any of the important options are common and if their values have changed
         important_options = [
             {"name": "acf_pro_license", "description": "ACF Pro License Key"},
