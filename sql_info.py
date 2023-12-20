@@ -4,6 +4,7 @@ import mysql.connector
 from openai import OpenAI
 from prettytable import PrettyTable
 from database_utils import DatabaseUtils
+from analyze_database import AnalyzeDatabase
 
 class SQLInfo:
     # Initialize the SQLInfo class with two database cursors and command line arguments
@@ -156,6 +157,12 @@ class SQLInfo:
             else:
                 print('\n'.join(table1))  # Print only the first table
 
+        if self.args['analyze']:
+            if self.args['database'] is None:
+                print("Error: -db, --database is required. with -A, --analyze")
+                return
+            else:
+                AnalyzeDatabase(self.cursor1, self.cursor2, self.args).main()
         if self.args['tables']:
             if self.args['database'] is None:
                 print("Error: -db, --database is required. with -T, --tables")

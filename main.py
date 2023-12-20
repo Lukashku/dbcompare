@@ -15,6 +15,11 @@ from database_comparator import DatabaseComparator
 # TODO: Redo README SMALL
 # TODO: Remove unecessary print statements/commented out code SMALL
 # TODO: Create a database analysis type function. MEDIUM-BIG
+# TODO: Add option to compare databases with different names
+# TODO: Option to query data by date
+# TODO: Allow wordpress to analyze a single database?
+# TODO: finish privilege checking
+
 
 
 def get_connection_details(server, args):
@@ -46,7 +51,7 @@ def main():
             sys.exit(1)
         DatabaseComparator.compare_databases_with_args(cursor1, cursor2, args)
     elif args.get('command') == 'wordpress':
-        WordpressAnalyze(cursor1, cursor2, args).main()
+        WordpressAnalyze(cursor1, args, cursor2).main()
     elif args.get('command') == 'information':
         SQLInfo(cursor1, cursor2, args).main()
     else:

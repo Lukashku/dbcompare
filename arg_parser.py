@@ -17,7 +17,9 @@ def get_args():
     main_parser_main.add_argument('--log-output', default=None, help='The directory to output log files to')
 
     wordpress_parser = subparsers.add_parser('wordpress', help='Enable WordPress-specific analysis')
-    wordpress_parser.add_argument('--basic', action='store_true', help='Perform basic WordPress analysis')
+    wordpress_parser.add_argument('--server1', required=True, help='Connection string for server1, e.g., user:password@host:port')
+    wordpress_parser.add_argument('--server2', required=False, help='Connection string for server2, e.g., user:password@host:port')
+    wordpress_parser.add_argument('--database', '-db', required=True, help='The database to analyze')
     wordpress_parser.add_argument('--wp-users', action='store_true', help='Analyzes the wp_users table')
     wordpress_parser.add_argument('--wp-options', action='store_true', help='Analyzes the wp_options table')
 
@@ -30,6 +32,7 @@ def get_args():
     info_parser.add_argument('--openai', action='store_true', help='Use OpenAI to generate the SQL query (Experimental)')
     info_parser.add_argument('--list', '-L', action='store_true', help='List databases from the specified server(s)')
     info_parser.add_argument('--tables', '-T', action='store_true', help='List tables from the specified database')
+    info_parser.add_argument('--analyze', '-A', action='store_true', help='Analyze the specified database')
 
     return vars(main_parser.parse_args()), main_parser
     
