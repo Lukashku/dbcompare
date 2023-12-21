@@ -18,7 +18,8 @@ from database_comparator import DatabaseComparator
 # TODO: Add option to compare databases with different names
 # TODO: Option to query data by date
 # TODO: Allow wordpress to analyze a single database?
-# TODO: finish privilege checking
+# TODO: finish privilege checking SMALL
+# TODO: Add warning option to main option letting know about delete function SMALL
 
 
 def get_connection_details(server, args):
