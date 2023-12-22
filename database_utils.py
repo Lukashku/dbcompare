@@ -82,3 +82,31 @@ class DatabaseUtils:
         cursor.execute("SHOW TABLES IN {}".format(database))
         tables = [row[0] for row in cursor.fetchall()]
         return table_name in tables
+    
+    def privileges(cursor):
+        """
+        Retrieves the privileges of the current user for a specific database.
+
+        Args:
+            cursor: The database cursor.
+            database: The name of the database.
+
+        Returns:
+            If the user has the proper privileges.
+            A list of privileges.
+        """
+        cursor.execute("SHOW GRANTS FOR CURRENT_USER")
+        privileges = [privilege[0] for privilege in cursor.fetchall()]
+
+        def check_privileges():                
+            required_permissions = ['GRANT SELECT', 'GRANT SHOW VIEW', 'GRANT ALL PRIVILEGES']
+
+            if any(permission in grant for permission in required_permissions for grant in privileges):
+                return True
+            else:
+                return False
+
+        def get_privileges():
+            return privileges
+        
+        return check_privileges, get_privileges

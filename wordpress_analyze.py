@@ -1,4 +1,5 @@
 import sys
+import mysql.connector
 
 class WordpressAnalyze:
     def __init__(self, cursor1, args, cursor2=None):
@@ -23,7 +24,11 @@ class WordpressAnalyze:
         ]
     def wp_users(self):
         # Select all rows from the wp_users table
-        self.cursor1.execute("SELECT * FROM wp_users")
+        try:
+            self.cursor1.execute("SELECT * FROM wp_users")
+        except mysql.connector.errors.ProgrammingError as e:
+            print("Error: wp_users table does not exist in the specified database.")
+            sys.exit(1)
         users1 = self.cursor1.fetchall()
 
         # Assume 'user_login' is the first field and 'user_pass' is the second field in the tuples returned by fetchall()

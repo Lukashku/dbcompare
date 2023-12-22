@@ -105,15 +105,19 @@ class AnalyzeDatabase:
                         for row in rows[:5]:
                             self.print_row(columns, row)
 
-    def check_privileges(self):
-        self.cursor1.execute("SHOW GRANTS FOR CURRENT_USER")
-        privileges = self.cursor1.fetchall()
-        for privilege in privileges:
-            print(privilege)
-
 
     def main(self):
 
-        self.compare_tables()
-        self.check_user_tables()
-        self.check_privileges()
+        check_privileges, get_privileges = DatabaseUtils.privileges(self.cursor1)
+        if check_privileges():
+            print(get_privileges())
+            if self.cursor2:
+                check_privileges, get_privileges = DatabaseUtils.privileges(self.cursor2)
+                if check_privileges():
+                    print(get_privileges())
+            self.compare_tables()
+            self.check_user_tables()
+        else:
+            print("Insufficient privileges to analyze database")
+        
+        

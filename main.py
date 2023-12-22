@@ -18,9 +18,8 @@ from database_comparator import DatabaseComparator
 # TODO: Add option to compare databases with different names
 # TODO: Option to query data by date
 # TODO: Allow wordpress to analyze a single database?
-# TODO: finish privilege checking SMALL
-# TODO: Add warning option to main option letting know about delete function SMALL
-
+# TODO: Move priv check from analyze_db to db_utils
+# TODO: Sanitize sql queries ??
 
 def get_connection_details(server, args):
     # Parse the connection string to get the user, password, host, and port
@@ -60,7 +59,13 @@ def main():
             print("Error: --database is required.")
             main_parser.print_help()
             sys.exit(1)
-        DatabaseComparator.compare_databases_with_args(cursor1, cursor2, args)
+        print("\n" + "-" * 80)
+        print("WARNING: This option will potentially delete data from the --server1 database.")
+        print("-" * 80)
+        if input("Are you sure you want to continue? (y/n)").lower() == 'y':
+            DatabaseComparator.compare_databases_with_args(cursor1, cursor2, args)
+        else:
+            return
     elif args.get('command') == 'wordpress':
         WordpressAnalyze(cursor1, args, cursor2).main()
     elif args.get('command') == 'information':
